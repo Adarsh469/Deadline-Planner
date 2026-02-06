@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/notifications/generate",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/recurrences/generate",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
