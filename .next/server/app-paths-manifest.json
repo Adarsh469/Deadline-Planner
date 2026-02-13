@@ -1,0 +1,9 @@
+{
+  "/(marketing)/page": "app/(marketing)/page.js",
+  "/(app)/dashboard/page": "app/(app)/dashboard/page.js",
+  "/api/deadlines/route": "app/api/deadlines/route.js",
+  "/api/notifications/route": "app/api/notifications/route.js",
+  "/api/analytics/overview/route": "app/api/analytics/overview/route.js",
+  "/api/analytics/timeseries/route": "app/api/analytics/timeseries/route.js",
+  "/api/deadlines/[id]/route": "app/api/deadlines/[id]/route.js"
+}

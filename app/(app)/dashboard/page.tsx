@@ -13,6 +13,7 @@ import { useAnalytics } from "@/lib/hooks/use-analytics";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { RecurrenceForm } from "@/components/recurrence/RecurrenceForm";
 import { useDashboardUrlState } from "@/lib/hooks/use-dashboard-url-state";
+import { DeadlineCreate } from "@/components/dashboard/DeadlineCreate";
 
 export default function DashboardPage() {
   useDeadlines();
@@ -33,7 +34,20 @@ export default function DashboardPage() {
           <ViewSwitcher value={view} onChange={setView} />
         </header>
 
+        {view === "list" && <ListView deadlines={deadlines} sortMode={sortMode} onSortChange={setSortMode} />}
+        {view === "timeline" && <TimelineView deadlines={deadlines} />}
+        {view === "calendar" && <CalendarView deadlines={deadlines} />}
+        {view === "overdue" && <OverdueView deadlines={deadlines} />}
+
         <NotificationCenter />
+
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold">Create</h2>
+            <p className="text-sm text-slate-400">Add a deadline to test the flow.</p>
+          </div>
+          <DeadlineCreate />
+        </section>
 
         <section className="space-y-4">
           <div>
@@ -51,11 +65,6 @@ export default function DashboardPage() {
           </div>
           <RecurrenceForm />
         </section>
-
-        {view === "list" && <ListView deadlines={deadlines} sortMode={sortMode} onSortChange={setSortMode} />}
-        {view === "timeline" && <TimelineView deadlines={deadlines} />}
-        {view === "calendar" && <CalendarView deadlines={deadlines} />}
-        {view === "overdue" && <OverdueView deadlines={deadlines} />}
       </div>
     </div>
   );

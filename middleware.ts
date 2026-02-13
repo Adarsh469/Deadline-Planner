@@ -1,20 +1,13 @@
 import { withAuth } from "next-auth/middleware";
 import type { NextRequest } from "next/server";
 
-const publicRoutes = ["/"];
-
 export default withAuth(
   function middleware(_req: NextRequest) {
-    // withAuth handles redirects for protected routes
+    // Only runs for protected routes via matcher.
   },
   {
     callbacks: {
-      authorized: ({ token, req }) => {
-        const { pathname } = req.nextUrl;
-        if (publicRoutes.includes(pathname)) return true;
-        if (pathname.startsWith("/api/auth")) return true;
-        return !!token;
-      },
+      authorized: ({ token }) => (process.env.NODE_ENV === "development" ? true : !!token),
     },
     pages: {
       signIn: "/",
@@ -23,5 +16,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/dashboard", "/app/:path*"],
 };

@@ -2,16 +2,38 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { calculateUrgencyScore } from "@/lib/urgency";
+import type { DeadlinePriority } from "@prisma/client";
 
 const severity = (score: number) => {
-  if (score >= 1) return "critical";
-  if (score >= 0.4) return "high";
-  if (score >= 0.1) return "medium";
+  if (score >= 0.04) return "critical";
+  if (score >= 0.02) return "high";
+  if (score >= 0.01) return "medium";
   return "low";
 };
 
-export function UrgencyIndicator({ score }: { score: number }) {
-  const level = severity(score);
+const labelMap: Record<ReturnType<typeof severity>, string> = {
+  critical: "Critical",
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+};
+
+export function UrgencyIndicator({
+  score,
+  priority,
+  dueDate,
+}: {
+  score: number;
+  priority?: DeadlinePriority;
+  dueDate?: Date | string;
+}) {
+  const baseScore = Number.isFinite(score) ? score : 0;
+  const fallbackScore =
+    priority && dueDate ? calculateUrgencyScore(priority, new Date(dueDate)) : baseScore;
+  const effectiveScore = baseScore > 0 ? baseScore : fallbackScore;
+  const level = severity(effectiveScore);
+  const label = labelMap[level];
 
   return (
     <motion.div
@@ -29,7 +51,7 @@ export function UrgencyIndicator({ score }: { score: number }) {
       transition={{ duration: 1.6, repeat: level === "critical" ? Infinity : 0 }}
     >
       <span className="h-2 w-2 rounded-full bg-current" />
-      Urgency {score.toFixed(2)}
+      {label}
     </motion.div>
   );
 }

@@ -1,15 +1,41 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useSession, signOut, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 const glow = "radial-gradient(circle at 20% 20%, rgba(56,189,248,0.18), transparent 55%), radial-gradient(circle at 80% 10%, rgba(99,102,241,0.18), transparent 40%), radial-gradient(circle at 50% 80%, rgba(34,197,94,0.16), transparent 55%)";
 
 export default function MarketingPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  const goToDashboard = () => router.push("/dashboard");
+  const goToSignIn = () => signIn();
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
       <div className="absolute inset-0" style={{ backgroundImage: glow }} />
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-6 py-16">
+        <div className="absolute right-6 top-6 flex items-center gap-3 text-sm">
+          {status === "authenticated" ? (
+            <>
+              <button onClick={goToDashboard} className="text-slate-200 hover:text-white">
+                Dashboard
+              </button>
+              <button onClick={() => signOut({ callbackUrl: "/" })} className="text-slate-200 hover:text-white">
+                Sign out
+              </button>
+            </>
+          ) : (
+            <button onClick={goToSignIn} className="text-slate-200 hover:text-white">
+              Sign in
+            </button>
+          )}
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -24,6 +50,11 @@ export default function MarketingPage() {
             A production-ready command center for time-critical work. Urgency-aware views, smart reminders,
             and analytics that show exactly where time leaks.
           </p>
+          <div className="mt-8">
+            <Button variant="secondary" onClick={status === "authenticated" ? goToDashboard : goToSignIn}>
+              Get Started
+            </Button>
+          </div>
         </motion.div>
 
         <motion.div

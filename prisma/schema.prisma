@@ -46,6 +46,8 @@ model User {
   updatedAt       DateTime    @updatedAt
 
   deadlines       Deadline[]
+  recurrences     Recurrence[]
+  notifications   Notification[]
   accounts        Account[]
   sessions        Session[]
 }
@@ -69,6 +71,7 @@ model Deadline {
   recurrence      Recurrence?       @relation(fields: [recurrenceId], references: [id])
   dependencies    DeadlineDependency[] @relation("dependency_parent")
   dependents      DeadlineDependency[] @relation("dependency_child")
+  notifications   Notification[]
 
   @@index([dueDate])
   @@index([status])

@@ -1,19 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useDeadlineStore } from "@/store/deadline-store";
 
 export function useDeadlines() {
   const setDeadlines = useDeadlineStore((state) => state.setDeadlines);
-  const initialized = useRef(false);
 
   useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
     const controller = new AbortController();
 
-    fetch("/api/deadlines?sort=urgency", { signal: controller.signal })
+    fetch("/api/deadlines?sort=urgency", { signal: controller.signal, cache: "no-store" })
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed to load deadlines");
         const json = await res.json();
