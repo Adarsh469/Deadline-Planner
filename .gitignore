@@ -1,1 +1,20 @@
 node_modules
+# nextjs
+.next/
+out/
+
+# environment
+.env*
+
+# vscode
+.vscode/
+
+# logs
+*.log
+
+# build
+dist/
+build/
+
+# OS
+.DS_Store
