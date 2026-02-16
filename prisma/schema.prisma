@@ -19,9 +19,9 @@ enum DeadlinePriority {
 
 enum DeadlineStatus {
   PENDING
-  BLOCKED
   COMPLETED
   OVERDUE
+  BLOCKED
 }
 
 enum RecurrenceUnit {
