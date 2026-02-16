@@ -7,7 +7,8 @@ import { jsonResponse } from "@/lib/http";
 import { logError } from "@/lib/logger";
 
 function toDate(value: string | Date | null | undefined): Date | null | undefined {
-  if (!value) return value ?? undefined;
+  if (value === null) return null;
+  if (value === undefined || value === "") return undefined;
   if (value instanceof Date) return value;
   return new Date(value);
 }
