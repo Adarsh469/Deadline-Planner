@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { getAuthUserId } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { RecurrenceUnit, DeadlinePriority } from "@prisma/client";
 import { jsonResponse } from "@/lib/http";
@@ -7,7 +8,8 @@ import { logError } from "@/lib/logger";
 
 export async function GET() {
   try {
-    const userId = await getAuthUserId();
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
     if (!userId) return jsonResponse({ error: "Unauthorized" }, { status: 401 });
 
     const recurrences = await prisma.recurrence.findMany({
@@ -27,7 +29,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const userId = await getAuthUserId();
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
     if (!userId) return jsonResponse({ error: "Unauthorized" }, { status: 401 });
 
     const payload = (await req.json()) as {

@@ -7,7 +7,7 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => (process.env.NODE_ENV === "development" ? true : !!token),
+      authorized: ({ token }) => !!token,
     },
     pages: {
       signIn: "/",
@@ -16,5 +16,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/dashboard", "/app/:path*"],
+  matcher: ["/((?!api/auth|_next|favicon.ico).*)"],
 };

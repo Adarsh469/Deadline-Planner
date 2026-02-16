@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateUrgencyScore, deriveStatus } from "@/lib/urgency";
-import { getAuthUserId } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { jsonResponse } from "@/lib/http";
 import { logError } from "@/lib/logger";
 import type { DeadlineInput } from "@/types/deadline";
@@ -14,7 +15,8 @@ function parseSort(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const userId = await getAuthUserId();
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
     if (!userId) return jsonResponse({ error: "Unauthorized" }, { status: 401 });
 
     const deadlines = await prisma.deadline.findMany({
@@ -38,7 +40,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const userId = await getAuthUserId();
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
     if (!userId) return jsonResponse({ error: "Unauthorized" }, { status: 401 });
 
     const payload = (await req.json()) as DeadlineInput;
