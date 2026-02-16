@@ -5,6 +5,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { jsonResponse } from "@/lib/http";
 import { logError } from "@/lib/logger";
+
+function toDate(value: string | Date | null | undefined): Date | null | undefined {
+  if (!value) return value ?? undefined;
+  if (value instanceof Date) return value;
+  return new Date(value);
+}
 import type { DeadlineUpdateInput } from "@/types/deadline";
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
@@ -55,7 +61,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const urgencyScore = calculateUrgencyScore(priority, finalDueDate);
 
     let status = payload.status ?? existing.status;
-    if (!payload.status) status = deriveStatus(finalDueDate, completedAt ?? existing.completedAt);
+    const normalizedCompletedAt = toDate(completedAt ?? existing.completedAt);
+    if (!payload.status) status = deriveStatus(finalDueDate, normalizedCompletedAt);
 
     if (existing.dependencies.length > 0) {
       const blockers = await prisma.deadline.count({
