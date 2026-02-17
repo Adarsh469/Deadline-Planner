@@ -1,9 +1,16 @@
 {
-  "/(marketing)/page": "app/(marketing)/page.js",
-  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/(app)/dashboard/page": "app/(app)/dashboard/page.js",
-  "/api/deadlines/route": "app/api/deadlines/route.js",
-  "/api/notifications/route": "app/api/notifications/route.js",
+  "/(marketing)/page": "app/(marketing)/page.js",
+  "/api/analytics/overview/route": "app/api/analytics/overview/route.js",
   "/api/analytics/timeseries/route": "app/api/analytics/timeseries/route.js",
-  "/api/analytics/overview/route": "app/api/analytics/overview/route.js"
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/api/deadlines/[id]/route": "app/api/deadlines/[id]/route.js",
+  "/api/deadlines/route": "app/api/deadlines/route.js",
+  "/api/notifications/ack/route": "app/api/notifications/ack/route.js",
+  "/api/notifications/generate/route": "app/api/notifications/generate/route.js",
+  "/api/notifications/route": "app/api/notifications/route.js",
+  "/api/recurrences/generate/route": "app/api/recurrences/generate/route.js",
+  "/api/recurrences/[id]/route": "app/api/recurrences/[id]/route.js",
+  "/api/recurrences/route": "app/api/recurrences/route.js"
 }
