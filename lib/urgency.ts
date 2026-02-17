@@ -15,7 +15,7 @@ export function calculateUrgencyScore(priority: DeadlinePriority, dueDate: Date)
   return Number((weight / hoursRemaining).toFixed(4));
 }
 
-export function deriveStatus(dueDate: Date, completedAt?: Date | null): "PENDING" | "OVERDUE" | "COMPLETED" {
+export function deriveStatus(dueDate: Date, completedAt?: Date | null): "PENDING" | "OVERDUE" | "COMPLETED" | "BLOCKED" {
   if (completedAt) return "COMPLETED";
   if (dueDate.getTime() < Date.now()) return "OVERDUE";
   return "PENDING";
