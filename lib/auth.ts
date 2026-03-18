@@ -1,33 +1,38 @@
 import type { NextAuthOptions } from "next-auth";
-import EmailProvider from "next-auth/providers/email";
+import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 const providers: NextAuthOptions["providers"] = [];
 
-if (
-  process.env.EMAIL_SERVER_HOST &&
-  process.env.EMAIL_SERVER_PORT &&
-  process.env.EMAIL_SERVER_USER &&
-  process.env.EMAIL_SERVER_PASSWORD &&
-  process.env.EMAIL_FROM
-) {
-  providers.push(
-    EmailProvider({
-      server: {
-        host: process.env.EMAIL_SERVER_HOST,
-        port: Number(process.env.EMAIL_SERVER_PORT),
-        auth: {
-          user: process.env.EMAIL_SERVER_USER,
-          pass: process.env.EMAIL_SERVER_PASSWORD,
-        },
-      },
-      from: process.env.EMAIL_FROM,
-    })
-  );
-}
+// ── Credentials (email + password) – always available ─────────────
+providers.push(
+  CredentialsProvider({
+    name: "Email",
+    credentials: {
+      email: { label: "Email", type: "email", placeholder: "you@example.com" },
+      password: { label: "Password", type: "password" },
+    },
+    async authorize(credentials) {
+      if (!credentials?.email || !credentials?.password) return null;
 
+      const user = await prisma.user.findUnique({
+        where: { email: credentials.email },
+      });
+
+      if (!user || !user.password) return null;
+
+      const isValid = await bcrypt.compare(credentials.password, user.password);
+      if (!isValid) return null;
+
+      return { id: user.id, name: user.name, email: user.email };
+    },
+  })
+);
+
+// ── Google OAuth – optional ───────────────────────────────────────
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(
     GoogleProvider({
@@ -42,6 +47,9 @@ export const authOptions: NextAuthOptions = {
   providers,
   session: {
     strategy: "jwt",
+  },
+  pages: {
+    signIn: "/auth/signin",
   },
   callbacks: {
     async jwt({ token, user }) {

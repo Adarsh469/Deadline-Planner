@@ -19,6 +19,21 @@ const labelMap: Record<ReturnType<typeof severity>, string> = {
   low: "Low",
 };
 
+// Priority floors: a deadline should never show urgency below its own priority
+const priorityFloor: Record<DeadlinePriority, ReturnType<typeof severity>> = {
+  LOW: "low",
+  MEDIUM: "medium",
+  HIGH: "high",
+  CRITICAL: "critical",
+};
+
+const severityRank: Record<ReturnType<typeof severity>, number> = {
+  low: 0,
+  medium: 1,
+  high: 2,
+  critical: 3,
+};
+
 export function UrgencyIndicator({
   score,
   priority,
@@ -32,7 +47,17 @@ export function UrgencyIndicator({
   const fallbackScore =
     priority && dueDate ? calculateUrgencyScore(priority, new Date(dueDate)) : baseScore;
   const effectiveScore = baseScore > 0 ? baseScore : fallbackScore;
-  const level = severity(effectiveScore);
+
+  let level: ReturnType<typeof severity> = severity(effectiveScore);
+
+  // Floor: never show lower than the item's own priority
+  if (priority) {
+    const floor = priorityFloor[priority];
+    if (severityRank[level] < severityRank[floor]) {
+      level = floor;
+    }
+  }
+
   const label = labelMap[level];
 
   return (

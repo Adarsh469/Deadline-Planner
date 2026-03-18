@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
       if (blockers > 0) status = "BLOCKED";
     }
 
+        // Step 1: Create the deadline WITHOUT dependencies first
     const deadline = await prisma.deadline.create({
       data: {
         userId,
@@ -89,17 +90,29 @@ export async function POST(req: NextRequest) {
         urgencyScore,
         status,
         recurrenceId: payload.recurrenceId ?? null,
-        dependencies: payload.dependencyIds?.length
-          ? {
-              createMany: {
-                data: payload.dependencyIds.map((id) => ({ blockerId: id })),
-              },
-            }
-          : undefined,
       },
     });
 
-    return jsonResponse({ data: deadline }, { status: 201 });
+    // Step 2: Create dependencies after we have the deadline ID
+    if (payload.dependencyIds?.length) {
+      await prisma.deadlineDependency.createMany({
+        data: payload.dependencyIds.map((id) => ({
+          blockerId: id,
+          blockedId: deadline.id,
+        })),
+      });
+    }
+
+    // Step 3: Fetch the complete deadline with dependencies
+    const completeDeadline = await prisma.deadline.findUnique({
+      where: { id: deadline.id },
+      include: {
+        dependencies: true,
+        dependents: true,
+      },
+    });
+
+    return jsonResponse({ data: completeDeadline }, { status: 201 });
   } catch (error) {
     logError("deadlines.post.failed", { error: String(error) });
     return jsonResponse({ error: "Internal server error" }, { status: 500 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useDeadlineStore } from "@/store/deadline-store";
 import { useDeadlines } from "@/lib/hooks/use-deadlines";
 import { ListView } from "@/components/dashboard/ListView";
@@ -15,7 +16,7 @@ import { RecurrenceForm } from "@/components/recurrence/RecurrenceForm";
 import { useDashboardUrlState } from "@/lib/hooks/use-dashboard-url-state";
 import { DeadlineCreate } from "@/components/dashboard/DeadlineCreate";
 
-export default function DashboardPage() {
+function DashboardContent() {
   useDeadlines();
   const deadlines = useDeadlineStore((state) => state.deadlines);
   const { view, setView, sortMode, setSortMode } = useDashboardUrlState();
@@ -67,5 +68,13 @@ export default function DashboardPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+      <DashboardContent />
+    </Suspense>
   );
 }

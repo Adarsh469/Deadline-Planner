@@ -1,0 +1,8 @@
+# Deadline Planner cron jobs (replaces vercel.json crons)
+# Matches the original Vercel schedule exactly
+
+# Generate notifications every day at 09:00 UTC
+0 9 * * *  curl -sf -X POST -H "x-cron-secret: CRON_SECRET_PLACEHOLDER" http://app:3000/api/notifications/generate >> /var/log/cron.log 2>&1
+
+# Generate recurring deadlines every day at 09:30 UTC
+30 9 * * *  curl -sf -X POST -H "x-cron-secret: CRON_SECRET_PLACEHOLDER" http://app:3000/api/recurrences/generate >> /var/log/cron.log 2>&1
