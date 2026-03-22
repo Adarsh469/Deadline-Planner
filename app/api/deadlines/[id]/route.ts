@@ -76,6 +76,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       if (blockers > 0) status = "BLOCKED";
     }
 
+    // Auto-manage completedAt based on status transition
+    let finalCompletedAt: Date | null | undefined =
+      completedAt instanceof Date ? completedAt : undefined;
+    if (!finalCompletedAt) {
+      if (status === "COMPLETED" && existing.status !== "COMPLETED") {
+        // Transitioning to COMPLETED — stamp now
+        finalCompletedAt = new Date();
+      } else if (status !== "COMPLETED" && existing.status === "COMPLETED") {
+        // Transitioning away from COMPLETED — clear the timestamp
+        finalCompletedAt = null;
+      } else {
+        // No change — preserve existing
+        finalCompletedAt = existing.completedAt ?? undefined;
+      }
+    }
+
     const deadline = await prisma.deadline.update({
       where: { id: params.id },
       data: {
@@ -85,7 +101,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         priority: payload.priority ?? undefined,
         category: payload.category ?? undefined,
         status,
-        completedAt: completedAt ?? undefined,
+        completedAt: finalCompletedAt,
         urgencyScore,
       },
     });

@@ -8,19 +8,23 @@ import { TimelineView } from "@/components/dashboard/TimelineView";
 import { CalendarView } from "@/components/dashboard/CalendarView";
 import { OverdueView } from "@/components/dashboard/OverdueView";
 import { ViewSwitcher } from "@/components/dashboard/ViewSwitcher";
-import { AnalyticsCards } from "@/components/dashboard/AnalyticsCards";
+import { AnalyticsCards, PriorityBreakdown } from "@/components/dashboard/AnalyticsCards";
 import { AnalyticsCharts } from "@/components/dashboard/AnalyticsCharts";
 import { useAnalytics } from "@/lib/hooks/use-analytics";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { RecurrenceForm } from "@/components/recurrence/RecurrenceForm";
 import { useDashboardUrlState } from "@/lib/hooks/use-dashboard-url-state";
 import { DeadlineCreate } from "@/components/dashboard/DeadlineCreate";
+import { RecurrenceManager } from "@/components/recurrence/RecurrenceManager";
 
 function DashboardContent() {
   useDeadlines();
   const deadlines = useDeadlineStore((state) => state.deadlines);
   const { view, setView, sortMode, setSortMode } = useDashboardUrlState();
   const { overview, timeseries, loading } = useAnalytics();
+
+  // Non-recurring: for list and overdue views (recurring instances only in timeline/calendar)
+  const nonRecurring = deadlines.filter((d) => !d.recurrenceId);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -35,10 +39,10 @@ function DashboardContent() {
           <ViewSwitcher value={view} onChange={setView} />
         </header>
 
-        {view === "list" && <ListView deadlines={deadlines} sortMode={sortMode} onSortChange={setSortMode} />}
+        {view === "list" && <ListView deadlines={nonRecurring} sortMode={sortMode} onSortChange={setSortMode} />}
         {view === "timeline" && <TimelineView deadlines={deadlines} />}
         {view === "calendar" && <CalendarView deadlines={deadlines} />}
-        {view === "overdue" && <OverdueView deadlines={deadlines} />}
+        {view === "overdue" && <OverdueView deadlines={nonRecurring} />}
 
         <NotificationCenter />
 
@@ -53,10 +57,15 @@ function DashboardContent() {
         <section className="space-y-4">
           <div>
             <h2 className="text-lg font-semibold">Analytics</h2>
-            <p className="text-sm text-slate-400">Completion performance and distribution.</p>
+            <p className="text-sm text-slate-400">Your deadline performance at a glance.</p>
           </div>
           <AnalyticsCards overview={overview} loading={loading} />
-          <AnalyticsCharts overview={overview} timeseries={timeseries} loading={loading} />
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <AnalyticsCharts overview={overview} timeseries={timeseries} loading={loading} />
+            </div>
+            <PriorityBreakdown overview={overview} />
+          </div>
         </section>
 
         <section className="space-y-4">
@@ -65,6 +74,7 @@ function DashboardContent() {
             <p className="text-sm text-slate-400">Create automated schedules.</p>
           </div>
           <RecurrenceForm />
+          <RecurrenceManager />
         </section>
       </div>
     </div>

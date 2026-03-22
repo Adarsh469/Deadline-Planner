@@ -7,8 +7,10 @@ export type AnalyticsOverview = {
   completedCount: number;
   overdueCount: number;
   onTimePercent: number;
-  avgDelayHours: number;
+  avgDaysLate: number;
+  streakDays: number;
   priorityDistribution: Array<{ priority: string; count: number }>;
+  categoryBreakdown: Array<{ category: string; count: number }>;
 };
 
 export type AnalyticsTimeseries = Array<{ week_start: string; completed: number }>;
@@ -23,8 +25,12 @@ export function useAnalytics() {
     setLoading(true);
 
     Promise.all([
-      fetch("/api/analytics/overview").then((res) => (res.ok ? res.json() : Promise.reject(res.status))),
-      fetch("/api/analytics/timeseries").then((res) => (res.ok ? res.json() : Promise.reject(res.status))),
+      fetch("/api/analytics/overview", { cache: "no-store" }).then((res) =>
+        res.ok ? res.json() : Promise.reject(res.status)
+      ),
+      fetch("/api/analytics/timeseries", { cache: "no-store" }).then((res) =>
+        res.ok ? res.json() : Promise.reject(res.status)
+      ),
     ])
       .then(([overviewRes, timeseriesRes]) => {
         if (!active) return;
@@ -41,9 +47,7 @@ export function useAnalytics() {
         setLoading(false);
       });
 
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
 
   return { overview, timeseries, loading };

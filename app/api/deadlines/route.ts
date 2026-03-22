@@ -19,8 +19,14 @@ export async function GET(req: NextRequest) {
     const userId = session?.user?.id;
     if (!userId) return jsonResponse({ error: "Unauthorized" }, { status: 401 });
 
+    const includeRecurring = req.nextUrl.searchParams.get("includeRecurring") === "true";
+
     const deadlines = await prisma.deadline.findMany({
-      where: { userId },
+      where: {
+        userId,
+        // By default exclude auto-generated recurring entries; opt-in via ?includeRecurring=true
+        ...(includeRecurring ? {} : { recurrenceId: null }),
+      },
       orderBy: parseSort(req),
       include: {
         dependencies: true,
@@ -30,7 +36,7 @@ export async function GET(req: NextRequest) {
 
     return jsonResponse(
       { data: deadlines },
-      { cacheControl: "private, max-age=30, stale-while-revalidate=60" }
+      { cacheControl: "private, no-store" }
     );
   } catch (error) {
     logError("deadlines.get.failed", { error: String(error) });
@@ -78,7 +84,7 @@ export async function POST(req: NextRequest) {
       if (blockers > 0) status = "BLOCKED";
     }
 
-        // Step 1: Create the deadline WITHOUT dependencies first
+    // Step 1: Create the deadline WITHOUT dependencies first
     const deadline = await prisma.deadline.create({
       data: {
         userId,

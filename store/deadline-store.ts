@@ -10,15 +10,18 @@ export type DeadlineFilters = {
 type DeadlineState = {
   deadlines: Deadline[];
   filters: DeadlineFilters;
+  recurrenceVersion: number;
   setDeadlines: (deadlines: Deadline[]) => void;
   upsertDeadline: (deadline: Deadline) => void;
   removeDeadline: (id: string) => void;
   setFilters: (filters: DeadlineFilters) => void;
+  bumpRecurrenceVersion: () => void;
 };
 
 export const useDeadlineStore = create<DeadlineState>((set) => ({
   deadlines: [],
   filters: {},
+  recurrenceVersion: 0,
   setDeadlines: (deadlines) => set({ deadlines }),
   upsertDeadline: (deadline) =>
     set((state) => {
@@ -32,4 +35,5 @@ export const useDeadlineStore = create<DeadlineState>((set) => ({
     }),
   removeDeadline: (id) => set((state) => ({ deadlines: state.deadlines.filter((item) => item.id !== id) })),
   setFilters: (filters) => set({ filters }),
+  bumpRecurrenceVersion: () => set((state) => ({ recurrenceVersion: state.recurrenceVersion + 1 })),
 }));

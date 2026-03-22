@@ -34,7 +34,7 @@ services:
         condition: service_healthy
     # Run Prisma migrations then start the app
     command: >
-      sh -c "npx prisma migrate deploy && node server.js"
+      sh -c "npx prisma db push --accept-data-loss && node server.js"
 
   # ── Cron Runner (replaces Vercel crons) ─────────────────────────
   cron:

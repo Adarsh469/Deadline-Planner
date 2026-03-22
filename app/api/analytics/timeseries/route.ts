@@ -4,23 +4,49 @@ import { prisma } from "@/lib/prisma";
 import { jsonResponse } from "@/lib/http";
 import { logError } from "@/lib/logger";
 
+/** Returns the Monday of the week containing `date`. */
+function weekStart(date: Date): string {
+  const d = new Date(date);
+  const day = d.getDay(); // 0=Sun
+  const diff = (day === 0 ? -6 : 1) - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
     if (!userId) return jsonResponse({ error: "Unauthorized" }, { status: 401 });
 
-    const rows = await prisma.$queryRaw<Array<{ week_start: string; completed: number }>>`
-      SELECT
-        DATE_TRUNC('week', "completedAt")::date AS week_start,
-        COUNT(*)::int AS completed
-      FROM "Deadline"
-      WHERE "userId" = ${userId} AND "status" = 'COMPLETED'
-      GROUP BY week_start
-      ORDER BY week_start ASC
-    `;
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-    return jsonResponse({ data: rows }, { cacheControl: "private, max-age=120, stale-while-revalidate=240" });
+    // Fetch non-recurring completed deadlines in the last 90 days using Prisma (no raw SQL)
+    const completed = await prisma.deadline.findMany({
+      where: {
+        userId,
+        status: "COMPLETED",
+        recurrenceId: null,
+        completedAt: { gte: ninetyDaysAgo, not: null },
+      },
+      select: { completedAt: true },
+      orderBy: { completedAt: "asc" },
+    });
+
+    // Bucket into ISO weeks in JavaScript
+    const buckets: Record<string, number> = {};
+    for (const d of completed) {
+      if (!d.completedAt) continue;
+      const key = weekStart(d.completedAt);
+      buckets[key] = (buckets[key] ?? 0) + 1;
+    }
+
+    const rows = Object.entries(buckets)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([week_start, completed]) => ({ week_start, completed }));
+
+    return jsonResponse({ data: rows }, { cacheControl: "no-store" });
   } catch (error) {
     logError("analytics.timeseries.failed", { error: String(error) });
     return jsonResponse({ error: "Internal server error" }, { status: 500 });

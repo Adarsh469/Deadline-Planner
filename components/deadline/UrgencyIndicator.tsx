@@ -50,12 +50,13 @@ export function UrgencyIndicator({
 
   let level: ReturnType<typeof severity> = severity(effectiveScore);
 
-  // Floor: never show lower than the item's own priority
   if (priority) {
     const floor = priorityFloor[priority];
-    if (severityRank[level] < severityRank[floor]) {
-      level = floor;
-    }
+    const ceil = priorityFloor[priority]; // also the ceiling — badge never exceeds own priority
+    // Apply floor
+    if (severityRank[level] < severityRank[floor]) level = floor;
+    // Apply ceiling
+    if (severityRank[level] > severityRank[ceil]) level = ceil;
   }
 
   const label = labelMap[level];

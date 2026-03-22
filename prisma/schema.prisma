@@ -108,8 +108,11 @@ model Recurrence {
   category       String?
   unit           RecurrenceUnit
   interval       Int            @default(1)
+  daysOfWeek     String?        // WEEKLY: comma-separated JS day numbers (0=Sun,1=Mon…6=Sat) e.g. "3,5"
+  datesOfMonth   String?        // MONTHLY: comma-separated day-of-month numbers e.g. "1,15"
   startDate      DateTime
   endDate        DateTime?
+  pausedUntil    DateTime?  // null = active; set to a future date to temporarily pause
   lastGeneratedAt DateTime?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
