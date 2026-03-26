@@ -12,9 +12,11 @@ export function useDeadlines() {
 
     (async () => {
       try {
-        // 1. Trigger deadline generation so expired pauses auto-resume and new occurrences appear
+        // 1. Clean up: delete completed past-due, promote pending past-due → OVERDUE
+        await fetch("/api/deadlines/cleanup", { method: "POST", signal: controller.signal });
+        // 2. Trigger recurrence generation so expired pauses auto-resume
         await fetch("/api/recurrences/generate-now", { method: "POST", signal: controller.signal });
-        // 2. Fetch the up-to-date deadlines and populate the store
+        // 3. Fetch the up-to-date deadlines and populate the store
         const res = await fetch("/api/deadlines?sort=urgency&includeRecurring=true", {
           signal: controller.signal,
           cache: "no-store",

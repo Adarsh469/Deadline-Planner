@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { PauseCircle } from "lucide-react";
 import { useDeadlineStore } from "@/store/deadline-store";
 
 type Recurrence = {
@@ -144,8 +145,9 @@ export function RecurrenceManager() {
                                     <p className="text-sm font-medium text-slate-100">{r.title}</p>
                                     <p className="text-xs text-slate-400">{scheduleLabel(r)}</p>
                                     {paused && r.pausedUntil && (
-                                        <span className="inline-flex items-center gap-1 mt-1 rounded-full bg-yellow-500/15 border border-yellow-500/30 px-2 py-0.5 text-[11px] text-yellow-300 font-medium">
-                                            ⏸ Paused until {new Date(r.pausedUntil).toLocaleDateString()}
+                                        <span className="inline-flex items-center gap-1 mt-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 text-[11px] text-yellow-400 font-medium">
+                                            <PauseCircle size={10} strokeWidth={2} />
+                                            Paused until {new Date(r.pausedUntil).toLocaleDateString()}
                                         </span>
                                     )}
                                 </div>
