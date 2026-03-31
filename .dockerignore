@@ -11,3 +11,5 @@ node_modules
 *.log
 README.md
 .DS_Store
+docker-compose.yml
+.github/
