@@ -32,5 +32,5 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/deadline-planner:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/blueknight2345:deadline-planner
           # tags: ${{ secrets.DOCKERHUB_USERNAME }}/deadline-planner:${{ github.sha }}
