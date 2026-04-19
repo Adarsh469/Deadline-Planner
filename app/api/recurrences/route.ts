@@ -40,6 +40,8 @@ export async function POST(req: NextRequest) {
       category?: string | null;
       unit: RecurrenceUnit;
       interval: number;
+      daysOfWeek?: string | null;   // e.g. "3,5" for Wed+Fri
+      datesOfMonth?: string | null; // e.g. "1,15"
       startDate: string;
       endDate?: string | null;
     };
@@ -72,6 +74,8 @@ export async function POST(req: NextRequest) {
         category: payload.category ?? null,
         unit: payload.unit,
         interval,
+        daysOfWeek: payload.daysOfWeek ?? null,
+        datesOfMonth: payload.datesOfMonth ?? null,
         startDate,
         endDate,
       },

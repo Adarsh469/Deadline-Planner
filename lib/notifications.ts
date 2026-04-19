@@ -19,7 +19,7 @@ export function fireBrowserNotification(payload: NotificationPayload) {
     body: payload.body,
     tag: payload.id,
     renotify: true,
-  });
+  } as NotificationOptions & { renotify: boolean });
 
   return true;
 }

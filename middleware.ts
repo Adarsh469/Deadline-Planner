@@ -10,11 +10,11 @@ export default withAuth(
       authorized: ({ token }) => !!token,
     },
     pages: {
-      signIn: "/",
+      signIn: "/auth/signin",
     },
   }
 );
 
 export const config = {
-  matcher: ["/((?!api/auth|_next|favicon.ico).*)"],
+  matcher: ["/((?!api/auth|auth/signin|auth/signup|_next|favicon.ico).*)"],
 };

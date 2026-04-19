@@ -1,13 +1,13 @@
-node_modules
+node_modules/*
 # nextjs
-.next/
-out/
+.next/*
+out/*
 
 # environment
 .env*
 
 # vscode
-.vscode/
+.vscode/*
 
 # logs
 *.log
@@ -19,3 +19,5 @@ build/
 # OS
 .DS_Store
 .vercel
+
+.dockerignore

@@ -5,24 +5,84 @@ export type RecurrenceGenerationResult = {
   updated: number;
 };
 
-function addInterval(date: Date, unit: RecurrenceUnit, interval: number) {
-  const d = new Date(date);
-  if (unit === "DAILY") d.setDate(d.getDate() + interval);
-  if (unit === "WEEKLY") d.setDate(d.getDate() + interval * 7);
-  if (unit === "MONTHLY") d.setMonth(d.getMonth() + interval);
-  return d;
+// ── Helpers ─────────────────────────────────────────────────────────
+
+function parseIntList(s: string | null | undefined): number[] {
+  if (!s) return [];
+  return s.split(",").map((x) => parseInt(x.trim(), 10)).filter((n) => Number.isFinite(n));
 }
 
-function normalizeStart(startDate: Date) {
-  const d = new Date(startDate);
-  d.setSeconds(0, 0);
-  return d;
+/** Return every date between `from` (inclusive) and `to` (inclusive) */
+function dateRange(from: Date, to: Date): Date[] {
+  const dates: Date[] = [];
+  const cur = new Date(from);
+  cur.setHours(from.getHours(), from.getMinutes(), 0, 0);
+  while (cur <= to) {
+    dates.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
 }
+
+/** Given a recurrence start date, produce all due-dates in [now, horizon] */
+function computeDueDates(
+  unit: RecurrenceUnit,
+  startDate: Date,
+  daysOfWeek: number[], // for WEEKLY
+  datesOfMonth: number[], // for MONTHLY
+  now: Date,
+  horizon: Date
+): Date[] {
+  const h = startDate.getHours();
+  const m = startDate.getMinutes();
+  const from = now < startDate ? startDate : now;
+
+  if (unit === "DAILY") {
+    return dateRange(from, horizon)
+      .map((d) => {
+        d.setHours(h, m, 0, 0);
+        return d;
+      })
+      .filter((d) => d >= from && d <= horizon);
+  }
+
+  if (unit === "WEEKLY") {
+    if (daysOfWeek.length === 0) {
+      // Fallback: same weekday as startDate
+      daysOfWeek = [startDate.getDay()];
+    }
+    return dateRange(from, horizon)
+      .filter((d) => daysOfWeek.includes(d.getDay()))
+      .map((d) => {
+        d.setHours(h, m, 0, 0);
+        return d;
+      })
+      .filter((d) => d >= from && d <= horizon);
+  }
+
+  if (unit === "MONTHLY") {
+    if (datesOfMonth.length === 0) {
+      datesOfMonth = [startDate.getDate()];
+    }
+    return dateRange(from, horizon)
+      .filter((d) => datesOfMonth.includes(d.getDate()))
+      .map((d) => {
+        d.setHours(h, m, 0, 0);
+        return d;
+      })
+      .filter((d) => d >= from && d <= horizon);
+  }
+
+  return [];
+}
+
+// ── Main export ──────────────────────────────────────────────────────
 
 export async function generateRecurrenceDeadlines(
   prisma: PrismaClient,
   now = new Date(),
-  daysAhead = 30
+  daysAhead = 30,
+  opts: { userId?: string; recurrenceId?: string } = {}
 ): Promise<RecurrenceGenerationResult> {
   const horizon = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
 
@@ -30,6 +90,8 @@ export async function generateRecurrenceDeadlines(
     where: {
       startDate: { lte: horizon },
       OR: [{ endDate: null }, { endDate: { gte: now } }],
+      ...(opts.userId ? { userId: opts.userId } : {}),
+      ...(opts.recurrenceId ? { id: opts.recurrenceId } : {}),
     },
   });
 
@@ -39,18 +101,25 @@ export async function generateRecurrenceDeadlines(
   let updated = 0;
 
   for (const recurrence of recurrences) {
-    const start = normalizeStart(recurrence.startDate);
+    // Skip if paused and pausedUntil is still in the future
+    if (recurrence.pausedUntil && recurrence.pausedUntil > now) continue;
+    const startDate = new Date(recurrence.startDate);
     const end = recurrence.endDate ? new Date(recurrence.endDate) : null;
-    const last = recurrence.lastGeneratedAt ? new Date(recurrence.lastGeneratedAt) : null;
-
-    let cursor = last ? addInterval(last, recurrence.unit, recurrence.interval) : start;
     const cutoff = end && end < horizon ? end : horizon;
 
-    const dueDates: Date[] = [];
-    while (cursor <= cutoff) {
-      if (cursor >= start) dueDates.push(new Date(cursor));
-      cursor = addInterval(cursor, recurrence.unit, recurrence.interval);
-    }
+    // Use last-generated time as the lower bound so we don't regenerate past entries
+    const lastGen = recurrence.lastGeneratedAt ? new Date(recurrence.lastGeneratedAt) : null;
+    // Start generating from 1 minute after lastGen (to avoid re-inserting it) or from now
+    const genFrom = lastGen ? new Date(lastGen.getTime() + 60_000) : now;
+
+    const dueDates = computeDueDates(
+      recurrence.unit,
+      startDate,
+      parseIntList(recurrence.daysOfWeek),
+      parseIntList(recurrence.datesOfMonth),
+      genFrom,
+      cutoff
+    );
 
     if (dueDates.length === 0) continue;
 

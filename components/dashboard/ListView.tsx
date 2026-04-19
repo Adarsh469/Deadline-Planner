@@ -59,18 +59,10 @@ export function ListView({
                 <div
                   key={deadline.id}
                   className={cn(
-                    "relative",
-                    deadline.priority === "CRITICAL" && "ring-1 ring-red-500/40",
-                    deadline.status === "OVERDUE" && "shadow-[0_0_20px_rgba(239,68,68,0.25)]"
+                    deadline.priority === "CRITICAL" && "ring-1 ring-red-500/40 rounded-2xl",
+                    deadline.status === "OVERDUE" && "shadow-[0_0_20px_rgba(239,68,68,0.25)] rounded-2xl"
                   )}
                 >
-                  {(deadline.priority === "CRITICAL" || deadline.status === "OVERDUE") && (
-                    <div className="absolute -top-3 right-4">
-                      <Badge variant={deadline.status === "OVERDUE" ? "overdue" : "critical"}>
-                        {deadline.status === "OVERDUE" ? "OVERDUE" : "CRITICAL"}
-                      </Badge>
-                    </div>
-                  )}
                   <DeadlineCard deadline={deadline} />
                 </div>
               ))}
@@ -78,23 +70,15 @@ export function ListView({
           )}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 pt-2 md:grid-cols-2">
           {sorted.map((deadline) => (
             <div
               key={deadline.id}
               className={cn(
-                "relative",
-                deadline.priority === "CRITICAL" && "ring-1 ring-red-500/40",
-                deadline.status === "OVERDUE" && "shadow-[0_0_20px_rgba(239,68,68,0.25)]"
+                deadline.priority === "CRITICAL" && "ring-1 ring-red-500/40 rounded-2xl",
+                deadline.status === "OVERDUE" && "shadow-[0_0_20px_rgba(239,68,68,0.25)] rounded-2xl"
               )}
             >
-              {(deadline.priority === "CRITICAL" || deadline.status === "OVERDUE") && (
-                <div className="absolute -top-3 right-4">
-                  <Badge variant={deadline.status === "OVERDUE" ? "overdue" : "critical"}>
-                    {deadline.status === "OVERDUE" ? "OVERDUE" : "CRITICAL"}
-                  </Badge>
-                </div>
-              )}
               <DeadlineCard deadline={deadline} />
             </div>
           ))}
