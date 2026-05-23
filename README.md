@@ -1,115 +1,184 @@
-# Deadline Manager
+# Deadline Planner
 
-A production-grade deadline management system built for urgency-first workflows. It combines real-time urgency scoring, dependency awareness, recurring deadlines, analytics, and smart reminders into a single, scalable platform.
-
-## System Overview
-Deadline Manager is not a simple todo app. It’s a deadline intelligence layer with:
-- Urgency-based prioritization and visual emphasis
-- Multiple views (list, timeline, calendar, overdue)
-- Smart notifications and daily reminders
-- Recurrence engine with cron-friendly generation
-- Analytics on completion behavior and timing
-- Secure, session-scoped access for each user
-
-## Architecture Diagram (Text-Based)
-```
-+------------------------+        +-----------------------------+
-|      Next.js App       |        |        Vercel Cron          |
-|  (App Router + UI)     |        | /api/notifications/generate |
-|                        |        | /api/recurrences/generate   |
-+-----------+------------+        +---------------+-------------+
-            |                                       |
-            v                                       v
-+------------------------+        +-----------------------------+
-|   Next.js API Routes   | <----> |   Notification/Recurrence   |
-|  Auth + CRUD + Analytics|       |        Engines (Server)     |
-+-----------+------------+        +---------------+-------------+
-            |
-            v
-+------------------------+
-|     Prisma ORM         |
-+-----------+------------+
-            |
-            v
-+------------------------+
-|  PostgreSQL (Supabase) |
-+------------------------+
-```
-
-## Tech Stack Justification
-- **Next.js (App Router)**: Modern routing, server-first API design, strong Vercel alignment.
-- **React + TypeScript**: Type safety for reliability at scale.
-- **Tailwind + shadcn/ui**: Rapid, consistent UI with production-ready components.
-- **Zustand**: Lightweight state management, ideal for view-level orchestration.
-- **Prisma**: Strong schema modeling, predictable migrations, safe queries.
-- **NextAuth.js**: Secure session-based auth with Supabase-compatible schema.
-- **PostgreSQL (Supabase)**: Durable storage, relational constraints, analytics-friendly queries.
-- **Vercel**: Free-tier deployment with first-class support for Next.js and cron.
-
-## Key Engineering Challenges Solved
-- **Urgency calculation at scale**: Stored urgency scores and indexed queries to avoid recomputation hotspots.
-- **Idempotent background generation**: Notification and recurrence engines are safe to run repeatedly with unique constraints and `createMany` + `skipDuplicates`.
-- **Per-user isolation**: All data is scoped by `session.user.id`, enforced at API boundaries.
-- **Performance in large lists**: List virtualization avoids DOM churn with thousands of deadlines.
-- **Analytics without heavy client math**: Aggregations and time series are computed server-side.
-
-## Scalability Decisions
-- Indexed the most queried fields (`userId`, `status`, `priority`, `completedAt`, `dueDate`).
-- Private cache headers for user-scoped endpoints to reduce repeated API calls.
-- Virtualized list view for large deadline counts.
-- Cron-driven engines to avoid client-side timers or heavy background queues.
-
-## Deployment Instructions
-### 1) Environment Variables
-Create `.env.local` or configure in Vercel using `.env.example`:
-- `DATABASE_URL`
-- `NEXTAUTH_URL`
-- `NEXTAUTH_SECRET`
-- `EMAIL_SERVER_HOST`
-- `EMAIL_SERVER_PORT`
-- `EMAIL_SERVER_USER`
-- `EMAIL_SERVER_PASSWORD`
-- `EMAIL_FROM`
-- `CRON_SECRET`
-- Optional: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
-
-### 2) Database Setup (Supabase)
-- Create Supabase Postgres project
-- Apply Prisma migrations:
-  - `npx prisma migrate dev` (local)
-  - `npx prisma migrate deploy` (CI/Vercel)
-
-### 3) Vercel Deployment
-- Push repo to GitHub
-- Import into Vercel
-- Add env vars in Vercel project settings
-- Deploy
-
-### 4) Cron Jobs (Vercel)
-Add `vercel.json` (already included):
-- `/api/notifications/generate` every 15 minutes
-- `/api/recurrences/generate` hourly
-
-### 5) Smoke Test
-- Sign in via magic link
-- Create deadlines and verify list view
-- Confirm analytics load
-- Trigger cron endpoints and confirm notifications/recurrences
-
-## Screenshots (Placeholders)
-- `docs/screenshots/dashboard.png`
-- `docs/screenshots/timeline.png`
-- `docs/screenshots/calendar.png`
-- `docs/screenshots/analytics.png`
-
-## Future Roadmap
-- Team collaboration and shared workspaces
-- Advanced SLA-style deadline policies
-- Web push notifications with service worker
-- Dependency graph visualization
-- CSV export + reporting pipelines
-- Mobile app companion
+A full-stack task management platform built for urgency-first workflows. It combines automatic urgency scoring, recurring deadlines, multi-view dashboards, analytics, and smart notifications — all containerized and self-hosted with Docker.
 
 ---
 
-Built with production constraints in mind: scalability, security, and clarity.
+## What It Does
+
+This is not a simple to-do app. Deadline Planner is a deadline intelligence layer that helps users stay on top of what matters most:
+
+- Automatically scores and ranks tasks by urgency
+- Sends smart daily reminders via email
+- Supports recurring deadlines with a background cron engine
+- Provides multiple views: **List**, **Timeline**, **Calendar**, **Overdue**
+- Tracks completion analytics server-side (no heavy client math)
+- Enforces strict per-user data isolation
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend & API | Next.js 14 (App Router) + TypeScript |
+| UI | Tailwind CSS + shadcn/ui + Framer Motion |
+| State Management | Zustand |
+| ORM | Prisma |
+| Database | MySQL 8 (self-hosted via Docker) |
+| Auth | NextAuth.js (Credentials + Google OAuth) |
+| Reverse Proxy | Nginx |
+| Cron Engine | Alpine Linux container (replaces Vercel crons) |
+| CI/CD | GitHub Actions → Docker Hub |
+| Container Runtime | Docker + Docker Compose |
+
+---
+
+## Architecture
+
+```
+  GitHub Actions (CI/CD)
+      │  Push to 'updated_branch'
+      │  Build + Push image → Docker Hub
+      ▼
+  Docker Compose (Self-Hosted)
+  ┌──────────────────────────────────────────────┐
+  │                                              │
+  │   ┌──────────┐    ┌──────────┐              │
+  │   │  Nginx   │───▶│ Next.js  │              │
+  │   │ :80      │    │ App :3000│              │
+  │   └──────────┘    └────┬─────┘              │
+  │                        │                    │
+  │                   ┌────▼─────┐              │
+  │                   │  MySQL   │              │
+  │                   │ :3306    │              │
+  │                   └──────────┘              │
+  │                                              │
+  │   ┌──────────────────────────┐               │
+  │   │  Cron Container (Alpine) │               │
+  │   │  /api/notifications      │               │
+  │   │  /api/recurrences        │               │
+  │   └──────────────────────────┘               │
+  └──────────────────────────────────────────────┘
+```
+
+---
+
+## Running Locally (Docker)
+
+### Prerequisites
+- Docker and Docker Compose installed
+- A `.env` file configured (see below)
+
+### 1. Configure Environment Variables
+
+Copy the example and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+
+```env
+DATABASE_URL=mysql://deadline:deadline@db:3306/deadline_planner
+NEXTAUTH_URL=http://localhost
+NEXTAUTH_SECRET=your-secret-here
+
+# Email (for notifications)
+EMAIL_SERVER_HOST=
+EMAIL_SERVER_PORT=
+EMAIL_SERVER_USER=
+EMAIL_SERVER_PASSWORD=
+EMAIL_FROM=
+
+# Cron auth
+CRON_SECRET=your-cron-secret
+
+# Optional: Google OAuth
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+```
+
+### 2. Start the Stack
+
+```bash
+docker compose up --build
+```
+
+This starts 4 services:
+- **db** — MySQL 8 database
+- **app** — Next.js app (runs `prisma db push` on startup, then starts the server)
+- **nginx** — Reverse proxy on port 80
+- **cron** — Alpine container that fires background jobs on a schedule
+
+### 3. Open the App
+
+```
+http://localhost
+```
+
+---
+
+## Running Locally (Without Docker)
+
+```bash
+npm install
+npx prisma generate
+npx prisma db push
+npm run dev
+```
+
+App runs at `http://localhost:3000`
+
+---
+
+## CI/CD Pipeline
+
+On every push to `updated_branch`, GitHub Actions:
+1. Checks out the repo
+2. Builds the Docker image (multi-stage, Alpine-based)
+3. Pushes the image to **Docker Hub**
+
+Secrets required in GitHub repository settings:
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_PAT`
+
+---
+
+## Key Engineering Details
+
+- **Multi-stage Dockerfile**: Separate `deps`, `builder`, and `runner` stages keep the final image lean. Runs as a non-root user.
+- **Prisma on Alpine**: Uses `linux-musl-openssl-3.0.x` binary target for Alpine Linux compatibility.
+- **Idempotent cron jobs**: Notification and recurrence engines use `createMany` + `skipDuplicates` — safe to re-run.
+- **Session-scoped data**: All API routes are gated by `session.user.id`. No cross-user data leakage.
+- **List virtualization**: Dashboard handles large deadline counts without DOM bloat.
+- **Server-side analytics**: Aggregations and time-series are computed on the server, not the client.
+
+---
+
+## Scheduled Jobs (Cron Container)
+
+The Alpine cron container replaces Vercel's built-in cron. It fires two jobs via HTTP:
+
+| Job | Endpoint | Schedule |
+|---|---|---|
+| Generate notifications | `/api/notifications/generate` | Every 15 minutes |
+| Generate recurrences | `/api/recurrences/generate` | Every hour |
+
+The `CRON_SECRET` is injected at runtime via `entrypoint.sh` using `sed` — no secrets baked into the image.
+
+---
+
+## Future Roadmap
+
+- [ ] Team collaboration and shared workspaces
+- [ ] Web push notifications (service worker)
+- [ ] Dependency graph visualization
+- [ ] CSV export + reporting
+- [ ] Mobile companion app
+- [ ] SLA-style deadline policies
+
+---
+
+Built with production constraints in mind: containerized, secure, and scalable.
